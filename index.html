@@ -1,0 +1,505 @@
+<!DOCTYPE html><html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>このおと、な～に？</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
+      background-color: #fff;
+      background-image:
+        radial-gradient(#b3e0ff 10%, transparent 20%),
+        radial-gradient(#b3e0ff 10%, transparent 20%);
+      background-size: 30px 30px;
+      background-position: 0 0, 15px 15px;
+      padding: 16px;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      touch-action: manipulation;
+      overscroll-behavior: none;
+    }
+    .game-container {
+      width: min(100%, 680px);
+      background: #fff;
+      border-radius: 22px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      padding: 18px 14px 22px;
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 18px;
+      color: #4a6fa5;
+      font-size: clamp(24px, 5vw, 30px);
+      line-height: 1.3;
+    }
+    .score-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .score, .level {
+      background: #e6f2ff;
+      padding: 10px 16px;
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      min-width: 140px;
+    }
+    .staff-container {
+      width: 100%;
+      margin: 18px auto 8px;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .staff-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .message {
+      min-height: 54px;
+      margin-top: 10px;
+      padding: 0 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: clamp(18px, 4vw, 22px);
+      line-height: 1.5;
+      font-weight: 700;
+      color: #4a6fa5;
+    }
+    .correct { color: #2e9b44; }
+    .incorrect { color: #d93b3b; }
+    .buttons-container {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .note-button, .stage-clear button {
+      appearance: none;
+      -webkit-appearance: none;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      touch-action: manipulation;
+    }
+    .note-button {
+      min-height: 50px;
+      padding: 14px 6px;
+      font-size: clamp(16px, 4vw, 20px);
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .note-button:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+    .note-button:not(:disabled):active,
+    .stage-clear button:active {
+      transform: scale(0.98);
+    }
+    .note-button[data-note="do"] { background: #8B4513; }
+    .note-button[data-note="re"] { background: #FFD700; color: #333; }
+    .note-button[data-note="mi"] { background: #FF8C00; }
+    .note-button[data-note="fa"] { background: #FF0000; }
+    .note-button[data-note="so"] { background: #1E90FF; }
+    .stage-clear {
+      position: fixed;
+      inset: 0;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+    }
+    .stage-clear-content {
+      width: min(100%, 420px);
+      background: #fff;
+      border-radius: 20px;
+      padding: 28px 20px;
+      text-align: center;
+    }
+    .stage-clear h2 {
+      margin: 0 0 16px;
+      color: #4a6fa5;
+      font-size: clamp(24px, 5vw, 28px);
+    }
+    .stage-clear p {
+      margin: 0 0 24px;
+      font-size: clamp(18px, 4vw, 20px);
+      line-height: 1.6;
+    }
+    .stage-clear button {
+      width: 100%;
+      min-height: 50px;
+      padding: 12px 20px;
+      font-size: 18px;
+      color: #fff;
+      background: #4caf50;
+      cursor: pointer;
+    }
+    .game-clear { background: #ffd700 !important; }
+    .confetti {
+      position: fixed;
+      top: -12px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      animation: fall linear forwards;
+      z-index: 120;
+      pointer-events: none;
+    }
+    @keyframes fall {
+      to {
+        transform: translateY(110dvh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+    @media (max-width: 480px) {
+      .buttons-container { gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <h1>このおと、な～に？</h1>
+  <div class="score-container">
+    <div class="score">てん: <span id="score">0</span></div>
+    <div class="level">ステージ: <span id="stage">1</span> / 5　もんだい: <span id="level">1</span> / 50</div>
+  </div>
+
+  <div class="staff-container">
+    <svg class="staff-svg" viewBox="0 0 600 220" aria-label="五線譜">
+      <rect x="0" y="0" width="600" height="220" fill="white"/>
+
+      <!-- 五線 -->
+      <g stroke="#222" stroke-width="1.8">
+        <line x1="78"  y1="58"  x2="540" y2="58"/>
+        <line x1="78"  y1="82"  x2="540" y2="82"/>
+        <line x1="78"  y1="106" x2="540" y2="106"/>
+        <line x1="78"  y1="130" x2="540" y2="130"/>
+        <line x1="78"  y1="154" x2="540" y2="154"/>
+      </g>
+
+      <!--
+        ト音記号：Unicode U+1D11E（𝄞）
+        SMuFL 準拠フォントでは原点＝G線（ソの線）なので y="130"（G線）に合わせる。
+        Windows: Segoe UI Symbol / Mac・iOS: Apple Symbols / Android: Noto Music
+      -->
+      <text
+        id="clef-group"
+        x="78"
+        y="154"
+        font-size="155"
+        font-family="'Segoe UI Symbol', 'Apple Symbols', 'Noto Music', 'FreeSerif', 'Times New Roman', serif"
+        fill="#222"
+        aria-label="ト音記号"
+      >&#x1D11E;</text>
+
+      <g id="notes-layer"></g>
+    </svg>
+  </div>
+
+  <div class="message" id="message">ひだりから じゅんに こたえてね</div>
+
+  <div class="buttons-container">
+    <button class="note-button" data-note="do" type="button">ド</button>
+    <button class="note-button" data-note="re" type="button">レ</button>
+    <button class="note-button" data-note="mi" type="button">ミ</button>
+    <button class="note-button" data-note="fa" type="button">ファ</button>
+    <button class="note-button" data-note="so" type="button">ソ</button>
+  </div>
+</div>
+
+<div class="stage-clear" id="stage-clear" aria-hidden="true">
+  <div class="stage-clear-content" id="stage-clear-content">
+    <h2 id="clear-title">ステージクリア！</h2>
+    <p id="clear-message">つぎのステージへ すすもう！</p>
+    <button id="next-stage-button" type="button">つぎへ</button>
+  </div>
+</div>
+
+<script>
+  const SVG_NS = "http://www.w3.org/2000/svg";
+
+  const notePositions = {
+    do: { y: 178, name: "ド", ledger: true },
+    re: { y: 166, name: "レ", ledger: false },
+    mi: { y: 154, name: "ミ", ledger: false },
+    fa: { y: 142, name: "ファ", ledger: false },
+    so: { y: 130, name: "ソ", ledger: false }
+  };
+
+  let score = 0;
+  let questionNumber = 1;
+  let stageNumber = 1;
+  const totalQuestions = 50;
+  const questionsPerStage = 10;
+  const totalStages = 5;
+  let currentNotes = [];
+  let currentNoteIndex = 0;
+
+  const notesLayer = document.getElementById("notes-layer");
+  const messageElement = document.getElementById("message");
+  const scoreElement = document.getElementById("score");
+  const stageElement = document.getElementById("stage");
+  const levelElement = document.getElementById("level");
+  const noteButtons = document.querySelectorAll(".note-button");
+  const stageClearElement = document.getElementById("stage-clear");
+  const stageClearContent = document.getElementById("stage-clear-content");
+  const clearTitleElement = document.getElementById("clear-title");
+  const clearMessageElement = document.getElementById("clear-message");
+  const nextStageButton = document.getElementById("next-stage-button");
+
+  // ── AudioContext（遅延初期化） ──────────────────────────
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  // 単音を鳴らすヘルパー
+  function playTone(freq, startTime, duration, type = "sine", gainPeak = 0.35) {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, startTime);
+    gainNode.gain.setValueAtTime(0, startTime);
+    gainNode.gain.linearRampToValueAtTime(gainPeak, startTime + 0.03);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.05);
+  }
+
+  // ステージクリア：明るいファンファーレ
+  function playStageClearSound() {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    // ド・ミ・ソ・ド（高）と和音
+    const melody = [
+      { freq: 523.25, t: 0.00, dur: 0.18 }, // C5
+      { freq: 659.25, t: 0.18, dur: 0.18 }, // E5
+      { freq: 783.99, t: 0.36, dur: 0.18 }, // G5
+      { freq: 1046.5, t: 0.54, dur: 0.45 }, // C6
+    ];
+    melody.forEach(({ freq, t, dur }) => {
+      playTone(freq, now + t, dur, "triangle", 0.3);
+    });
+    // 最後に和音を重ねる
+    [523.25, 659.25, 783.99].forEach(freq => {
+      playTone(freq, now + 0.54, 0.45, "sine", 0.15);
+    });
+  }
+
+  // ゲームクリア：より華やかなファンファーレ
+  function playGameClearSound() {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const melody = [
+      { freq: 523.25, t: 0.00, dur: 0.14 },
+      { freq: 659.25, t: 0.14, dur: 0.14 },
+      { freq: 783.99, t: 0.28, dur: 0.14 },
+      { freq: 1046.5, t: 0.42, dur: 0.14 },
+      { freq: 1318.5, t: 0.56, dur: 0.14 },
+      { freq: 1046.5, t: 0.70, dur: 0.14 },
+      { freq: 1318.5, t: 0.84, dur: 0.55 },
+    ];
+    melody.forEach(({ freq, t, dur }) => {
+      playTone(freq, now + t, dur, "triangle", 0.28);
+    });
+    [523.25, 659.25, 783.99, 1046.5].forEach(freq => {
+      playTone(freq, now + 0.84, 0.55, "sine", 0.10);
+    });
+  }
+  // ──────────────────────────────────────────────────────
+
+  function createSvgElement(tag, attrs = {}) {
+    const el = document.createElementNS(SVG_NS, tag);
+    for (const [key, value] of Object.entries(attrs)) {
+      el.setAttribute(key, String(value));
+    }
+    return el;
+  }
+
+  function updateStageDisplay() {
+    stageNumber = Math.min(totalStages, Math.ceil(questionNumber / questionsPerStage));
+    stageElement.textContent = stageNumber;
+    levelElement.textContent = questionNumber;
+  }
+
+  function getAvailableNotes() {
+    if (questionNumber >= 25) return ["do", "re", "mi", "fa", "so"];
+    if (questionNumber >= 7)  return ["do", "re", "mi", "fa"];
+    return ["do", "re", "mi"];
+  }
+
+  function pickRandomNotes() {
+    const availableNotes = getAvailableNotes();
+    const count = questionNumber <= 20
+      ? Math.min(3, availableNotes.length)
+      : Math.min(4, availableNotes.length);
+    const pool = [...availableNotes];
+    const picked = [];
+    while (picked.length < count) {
+      const index = Math.floor(Math.random() * pool.length);
+      picked.push(pool.splice(index, 1)[0]);
+    }
+    return picked;
+  }
+
+  function createQuarterNote(x, y) {
+    const group = createSvgElement("g", { transform: `translate(${x} ${y})` });
+    const noteHead = createSvgElement("ellipse", {
+      cx: 0, cy: 0, rx: 11, ry: 7.5,
+      fill: "#333", transform: "rotate(-20)"
+    });
+    const stem = createSvgElement("line", {
+      x1: 8.5, y1: -1, x2: 8.5, y2: -72,
+      stroke: "#333", "stroke-width": 2.4, "stroke-linecap": "round"
+    });
+    group.appendChild(noteHead);
+    group.appendChild(stem);
+    return group;
+  }
+
+  function createLedgerLine(x, y) {
+    return createSvgElement("line", {
+      x1: x - 18, y1: y, x2: x + 18, y2: y,
+      stroke: "#222", "stroke-width": 1.8, "stroke-linecap": "round"
+    });
+  }
+
+  function renderNotes(noteKeys) {
+    notesLayer.innerHTML = "";
+    const positions = noteKeys.length === 3 ? [250, 372, 494] : [220, 318, 416, 514];
+    noteKeys.forEach((noteKey, index) => {
+      const x = positions[index];
+      const y = notePositions[noteKey].y;
+      if (notePositions[noteKey].ledger) {
+        notesLayer.appendChild(createLedgerLine(x, y));
+      }
+      notesLayer.appendChild(createQuarterNote(x, y));
+    });
+  }
+
+  function startNewRound() {
+    currentNotes = pickRandomNotes();
+    currentNoteIndex = 0;
+    updateStageDisplay();
+    messageElement.textContent = "ひだりから じゅんに こたえてね";
+    messageElement.className = "message";
+    noteButtons.forEach(b => { b.disabled = false; });
+    renderNotes(currentNotes);
+  }
+
+  function showStageClear(isGameClear) {
+    if (isGameClear) {
+      clearTitleElement.textContent = "おめでとう！";
+      clearMessageElement.textContent = "50もん クリアしました！";
+      nextStageButton.textContent = "もう一度遊ぶ";
+      stageClearContent.classList.add("game-clear");
+      createConfetti();
+      playGameClearSound();
+    } else {
+      clearTitleElement.textContent = `ステージ ${stageNumber} クリア！`;
+      clearMessageElement.textContent = "つぎのステージへ すすもう！";
+      nextStageButton.textContent = "つぎへ";
+      stageClearContent.classList.remove("game-clear");
+      playStageClearSound();
+    }
+    stageClearElement.style.display = "flex";
+    stageClearElement.setAttribute("aria-hidden", "false");
+  }
+
+  function checkAnswer(selectedNote) {
+    const correctNote = currentNotes[currentNoteIndex];
+    if (!correctNote) return;
+
+    if (selectedNote === correctNote) {
+      messageElement.textContent = `せいかい！ ${notePositions[correctNote].name} です！`;
+      messageElement.className = "message correct";
+      score += 10;
+      scoreElement.textContent = score;
+      currentNoteIndex += 1;
+
+      if (currentNoteIndex < currentNotes.length) return;
+
+      noteButtons.forEach(b => { b.disabled = true; });
+
+      if (questionNumber >= totalQuestions) {
+        window.setTimeout(() => showStageClear(true), 700);
+      } else if (questionNumber % questionsPerStage === 0) {
+        window.setTimeout(() => showStageClear(false), 700);
+      } else {
+        window.setTimeout(() => {
+          questionNumber += 1;
+          startNewRound();
+        }, 800);
+      }
+    } else {
+      messageElement.textContent = "ちがうよ。もういちど！";
+      messageElement.className = "message incorrect";
+    }
+  }
+
+  function createConfetti() {
+    const colors = ["#f00", "#0f0", "#00f", "#ff0", "#0ff", "#f0f"];
+    for (let i = 0; i < 80; i++) {
+      const confetti = document.createElement("div");
+      confetti.className = "confetti";
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.left = Math.random() * 100 + "vw";
+      confetti.style.animationDuration = (3 + Math.random() * 2) + "s";
+      confetti.style.animationDelay = Math.random() * 0.8 + "s";
+      document.body.appendChild(confetti);
+      window.setTimeout(() => confetti.remove(), 5500);
+    }
+  }
+
+  noteButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      checkAnswer(button.dataset.note);
+    });
+  });
+
+  nextStageButton.addEventListener("click", () => {
+    stageClearElement.style.display = "none";
+    stageClearElement.setAttribute("aria-hidden", "true");
+
+    if (questionNumber >= totalQuestions) {
+      score = 0;
+      questionNumber = 1;
+      stageNumber = 1;
+      scoreElement.textContent = score;
+    } else {
+      questionNumber += 1;
+    }
+
+    startNewRound();
+  });
+
+  startNewRound();
+</script>
+</body>
+</html>
